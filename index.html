@@ -1,28 +1,34 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>BTC Analyzer V7.2 • Polymarket US</title><style>:root{color-scheme:dark}*{box-sizing:border-box}body{background:#0b1020;color:#f1f5ff;font:16px system-ui,Arial;margin:0}main{max-width:720px;margin:auto;padding:22px 16px 60px}h1{font-size:25px;margin:8px 0}.sub,small{color:#9eabc4}.panel{background:#151e32;border:1px solid #2b3953;border-radius:15px;padding:17px;margin-top:14px}.tag{color:#a5b4fc;font-weight:700;font-size:12px;letter-spacing:.08em}.signal{font-size:34px;font-weight:800;color:#fbbf24;margin:7px 0}.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.value{font-size:26px;font-weight:750;word-break:break-word}label{display:block;margin:12px 0 5px}input,button{font:inherit;padding:11px;border-radius:9px;border:1px solid #53627d;background:#0b1020;color:white;width:100%}button{background:#354a81;cursor:pointer;margin-top:10px}a{color:#a5b4fc}#log{white-space:pre-wrap;overflow-wrap:anywhere;font-size:12px;max-height:180px;overflow:auto}.ok{color:#86efac}.bad{color:#fca5a5}.warn{color:#fde68a}</style></head><body><main><div class="tag">V7.2 BETA • POLYMARKET US ONLY</div><h1>BTC 15-minute Analyzer</h1><div class="sub">Read-only US quotes beta • no trade signals enabled</div><div class="panel"><div class="tag">TRADING SIGNAL</div><div class="signal">NO TRADE</div><div class="sub">Prices and potential returns are informational only. Probabilities, EV and trade signals stay disabled until the model is validated.</div></div><div class="panel"><div class="grid"><div><div class="sub">Contract countdown</div><div class="value" id="clock">--:--</div></div><div><div class="sub">Target (US API)</div><div class="value" id="target">—</div></div></div><p id="source" class="warn">Waiting for official US event data…</p><small id="market">—</small><p><a id="marketlink" href="https://polymarket.us/" target="_blank" rel="noopener">Open this market on Polymarket US</a></p></div><div class="panel"><div class="grid"><div><div class="sub">UP buy quote</div><div class="value" id="up">—</div></div><div><div class="sub">DOWN buy quote</div><div class="value" id="down">—</div></div></div><div class="grid" style="margin-top:12px"><div><div class="sub">UP return if correct</div><div class="value" id="upret">—</div></div><div><div class="sub">DOWN return if correct</div><div class="value" id="downret">—</div></div></div><p id="quotestatus" class="warn">Waiting for verified US quote mapping…</p><small id="quoteage">Last quote update: —</small><p class="sub">Top-of-book indicative prices, before fees and slippage. Return filter: at least 50% potential profit on a winning contract. Prices are shown only with explicit UP/DOWN market mapping. No global Polymarket quotes.</p></div><div class="panel"><div class="tag">OFFICIAL REFERENCE FEED</div><div class="grid"><div><div class="sub">BRTI reference (latest candle)</div><div class="value" id="spot">—</div></div><div><div class="sub">Reference status</div><div id="refstatus" class="warn">Checking…</div><small id="refage">Last update: —</small></div></div><small>Official US asset-price history endpoint, not Coinbase spot. Auto-checks every 5 seconds; the returned 1-minute candle may not change on every check and is not necessarily the final settlement average.</small></div><div class="panel"><div class="tag">CONNECTION DIAGNOSTICS</div><div id="status" class="warn">Checking official US API…</div><button id="retry">Retry now</button><div id="log"></div><small>If browser access is blocked, we'll need a server-side proxy or GitHub Actions rather than a guessed substitute.</small></div><div class="panel"><label for="slug">Optional: test a specific US event URL or slug</label><input id="slug" placeholder="Paste polymarket.us/event/... URL"><button id="use">Test this event</button><small>Leave blank to follow the current 15-minute UTC window automatically.</small></div></main><script>
-const API='https://gateway.polymarket.us';const $=id=>document.getElementById(id);let override='',active='',windowEnd=0,runId=0,refBusy=false,lastRefSuccess=0,lastRefTimestamp=0,quoteBusy=false,lastQuoteSuccess=0,quoteMappings=[];
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>BTC Analyzer V7.3 • Polymarket US</title><style>:root{color-scheme:dark}*{box-sizing:border-box}body{background:#0b1020;color:#f1f5ff;font:16px system-ui,Arial;margin:0}main{max-width:720px;margin:auto;padding:22px 16px 60px}h1{font-size:25px;margin:8px 0}.sub,small{color:#9eabc4}.panel{background:#151e32;border:1px solid #2b3953;border-radius:15px;padding:17px;margin-top:14px}.tag{color:#a5b4fc;font-weight:700;font-size:12px;letter-spacing:.08em}.signal{font-size:34px;font-weight:800;color:#fbbf24;margin:7px 0}.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.value{font-size:26px;font-weight:750;word-break:break-word}label{display:block;margin:12px 0 5px}input,button{font:inherit;padding:11px;border-radius:9px;border:1px solid #53627d;background:#0b1020;color:white;width:100%}button{background:#354a81;cursor:pointer;margin-top:10px}a{color:#a5b4fc}#log{white-space:pre-wrap;overflow-wrap:anywhere;font-size:12px;max-height:180px;overflow:auto}.ok{color:#86efac}.bad{color:#fca5a5}.warn{color:#fde68a}</style></head><body><main><div class="tag">V7.3 BETA • POLYMARKET US ONLY</div><h1>BTC 15-minute Analyzer</h1><div class="sub">Read-only US quotes beta • no trade signals enabled</div><div class="panel"><div class="tag">TRADING SIGNAL</div><div class="signal">NO TRADE</div><div class="sub">Prices and potential returns are informational only. Probabilities, EV and trade signals stay disabled until the model is validated.</div></div><div class="panel"><div class="grid"><div><div class="sub">Contract countdown</div><div class="value" id="clock">--:--</div></div><div><div class="sub">Target (US API)</div><div class="value" id="target">—</div></div></div><p id="source" class="warn">Waiting for official US event data…</p><small id="market">—</small><p><a id="marketlink" href="https://polymarket.us/" target="_blank" rel="noopener">Open this market on Polymarket US</a></p></div><div class="panel"><div class="grid"><div><div class="sub">UP buy quote</div><div class="value" id="up">—</div></div><div><div class="sub">DOWN buy quote</div><div class="value" id="down">—</div></div></div><div class="grid" style="margin-top:12px"><div><div class="sub">UP return if correct</div><div class="value" id="upret">—</div></div><div><div class="sub">DOWN return if correct</div><div class="value" id="downret">—</div></div></div><p id="quotestatus" class="warn">Waiting for verified US quote mapping…</p><small id="quoteage">Last quote update: —</small><p class="sub">Top-of-book indicative prices, before fees and slippage. Return filter: at least 50% potential profit on a winning contract. Quotes require a verified BTC Up/Down instrument and valid US bid/ask. No global Polymarket quotes.</p></div><div class="panel"><div class="tag">OFFICIAL REFERENCE FEED</div><div class="grid"><div><div class="sub">BRTI reference (latest candle)</div><div class="value" id="spot">—</div></div><div><div class="sub">Reference status</div><div id="refstatus" class="warn">Checking…</div><small id="refage">Last update: —</small></div></div><small>Official US asset-price history endpoint, not Coinbase spot. Auto-checks every 5 seconds; the returned 1-minute candle may not change on every check and is not necessarily the final settlement average.</small></div><div class="panel"><div class="tag">CONNECTION DIAGNOSTICS</div><div id="status" class="warn">Checking official US API…</div><button id="retry">Retry now</button><div id="log"></div><small>If browser access is blocked, we'll need a server-side proxy or GitHub Actions rather than a guessed substitute.</small></div><div class="panel"><label for="slug">Optional: test a specific US event URL or slug</label><input id="slug" placeholder="Paste polymarket.us/event/... URL"><button id="use">Test this event</button><small>Leave blank to follow the current 15-minute UTC window automatically.</small></div></main><script>
+const API='https://gateway.polymarket.us';const $=id=>document.getElementById(id);let override='',active='',windowEnd=0,runId=0,refBusy=false,lastRefSuccess=0,lastRefTimestamp=0,quoteBusy=false,lastQuoteSuccess=0,quoteMarket=null,marketVerified=false;
 function slugForNow(){let d=new Date(Math.floor(Date.now()/900000)*900000);return 'btc-updown-15m-'+d.toISOString().slice(0,16).replace('T','-').replace(':','')+'z'}
 function fmt(v){return Number.isFinite(v)?'$'+v.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}):'—'}
 function val(v){let x=Number(v?.value??v);return Number.isFinite(x)&&x>0?x:NaN}
 function log(s){$('log').textContent=(new Date().toLocaleTimeString()+' '+s+'\n'+$('log').textContent).slice(0,4500)}
 async function json(path){let r=await fetch(API+path,{cache:'no-store'});if(!r.ok)throw Error('HTTP '+r.status+' on '+path);return r.json()}
-function reset(){quoteMappings=[];lastQuoteSuccess=0;for(let id of ['target','up','down','upret','downret','spot'])$(id).textContent='—';$('source').textContent='Awaiting verified US data';$('refstatus').textContent='Checking…';$('quotestatus').textContent='Waiting for verified US quote mapping…';$('quoteage').textContent='Last quote update: —'}
+function reset(){quoteMarket=null;marketVerified=false;lastQuoteSuccess=0;for(let id of ['target','up','down','upret','downret','spot'])$(id).textContent='—';$('source').textContent='Awaiting verified US data';$('refstatus').textContent='Checking…';$('quotestatus').textContent='Waiting for verified US quote mapping…';$('quoteage').textContent='Last quote update: —'}
 function tick(){if(lastQuoteSuccess){let qage=Math.floor((Date.now()-lastQuoteSuccess)/1000);$('quoteage').textContent='Last quote API update: '+qage+'s ago';if(qage>20){$('quotestatus').textContent='STALE quotes — hidden';$('quotestatus').className='bad';clearQuotes()}}if(lastRefSuccess){let age=Math.floor((Date.now()-lastRefSuccess)/1000);$('refage').textContent='Last API update: '+age+'s ago';if(age>20){$('refstatus').textContent='STALE • last successful update '+age+'s ago';$('refstatus').className='bad'}}let end=override?windowEnd:(Math.floor(Date.now()/900000)+1)*900000;let sec=Math.max(0,Math.ceil((end-Date.now())/1000));$('clock').textContent=String(Math.floor(sec/60)).padStart(2,'0')+':'+String(sec%60).padStart(2,'0');if(!override&&active&&active!==slugForNow())refresh()}
 async function refresh(){let id=++runId;let slug=override||slugForNow();if(slug!==active){active=slug;reset();log('Switched to '+slug)}$('market').textContent=slug;$('marketlink').href='https://polymarket.us/event/'+encodeURIComponent(slug);$('status').textContent='Checking '+slug+'…';let event;
-try{let data=await json('/v1/events/slug/'+encodeURIComponent(slug));if(id!==runId)return;event=data.event||data;log('US event endpoint OK');$('status').textContent='US event found';}catch(e){if(id!==runId)return;$('status').textContent='US event unavailable: '+e.message;$('source').textContent='No verified target; do not trade from this dashboard';log('Event: '+e.message);return}
+try{let data=await json('/v1/events/slug/'+encodeURIComponent(slug));if(id!==runId)return;event=data.event||data;log('US event endpoint OK');$('status').textContent='US event found';}catch(e){if(id!==runId)return;$('status').textContent='US event unavailable: '+e.message;$('source').textContent='Event lookup failed; quotes paused until reverified';quoteMarket=null;marketVerified=false;lastQuoteSuccess=0;clearQuotes();$('quotestatus').textContent='Quotes paused: event API unavailable';log('Event: '+e.message);return}
 let markets=Array.isArray(event.markets)?event.markets:[];let selected=markets.filter(m=>m.assetPriceTerms?.asset?.symbol?.toLowerCase()==='btc');if(!selected.length)selected=markets;let targetVals=selected.map(m=>val(m.assetPriceTerms?.priceToBeat)).filter(Number.isFinite);if(targetVals.length&&targetVals.every(x=>x===targetVals[0])){$('target').textContent=fmt(targetVals[0]);$('source').textContent='AUTO • Polymarket US event assetPriceTerms.priceToBeat';$('source').className='ok';}else{$('source').textContent='Target missing or inconsistent in US event response';$('source').className='warn'}
 let end=event.endDate||selected[0]?.assetPriceTerms?.windowEnd||selected[0]?.endDate;windowEnd=Date.parse(end)||0;
-// Map sides only when the US event explicitly declares the direction. Never infer from array order.
-quoteMappings=[];
-for(const m of selected){
- const direction=String(m.assetPriceTerms?.direction||'').toUpperCase();
- const isUp=/(^|_)UP$|(^|_)ABOVE$|(^|_)HIGHER$/.test(direction);
- const isDown=/(^|_)DOWN$|(^|_)BELOW$|(^|_)LOWER$/.test(direction);
- if(!isUp&&!isDown)continue;
- if(typeof m.slug!=='string'||!m.slug)continue;
- quoteMappings.push({slug:m.slug,side:isUp?'UP':'DOWN',direction});
+// Polymarket US crypto schema: updown is ONE instrument; LONG pays for UP, SHORT pays for DOWN.
+// Only map an explicitly typed BTC Up/Down 15-minute instrument. No array-position guesses.
+quoteMarket=null;marketVerified=false;
+const typed=selected.filter(m=>{
+ const terms=m.assetPriceTerms||{};
+ const kind=String(terms.marketType||'');
+ const asset=String(terms.asset?.symbol||'').toLowerCase();
+ return kind==='ASSET_PRICE_MARKET_TYPE_UP_DOWN' && asset==='btc' && typeof m.slug==='string' && m.slug.length>0;
+});
+if(typed.length===1 && markets.length===1 && targetVals.length===1 && Number.isFinite(targetVals[0])){
+ quoteMarket=typed[0].slug;marketVerified=true;
+ log('Verified US BTC updown instrument: '+quoteMarket+' (LONG=UP; SHORT=DOWN)');
+ quotes();
+}else{
+ $('quotestatus').textContent='Quotes hidden: expected exactly one typed BTC Up/Down instrument with a verified target (found '+typed.length+' typed of '+markets.length+' markets)';
+ $('quotestatus').className='warn';clearQuotes();lastQuoteSuccess=0;
+ log('Mapping refused: markets='+markets.length+' typedBTCUpDown='+typed.length+' targets='+targetVals.length+' types='+selected.map(m=>String(m.assetPriceTerms?.marketType||'missing')).join(','));
 }
-log('Event markets: '+markets.length+'; target '+(targetVals.length?'present':'missing')+'; mapped '+quoteMappings.map(x=>x.side+':'+x.slug).join(', '));
-if(quoteMappings.length)quotes();else{$('quotestatus').textContent='No explicit UP/DOWN direction in event metadata; quotes safely hidden';$('quotestatus').className='warn'}
 }
 function clearQuotes(){for(let id of ['up','down','upret','downret'])$(id).textContent='—'}
 function money(v){return Number.isFinite(v)&&v>0&&v<1?v:NaN}
@@ -35,37 +41,26 @@ function displaySide(side,price){
  return gain>=50;
 }
 async function quotes(){
- if(quoteBusy||!quoteMappings.length)return;
+ if(quoteBusy||!marketVerified||!quoteMarket)return;
  quoteBusy=true;
- const contract=active, mappings=quoteMappings.slice();
+ const contract=active,slug=quoteMarket;
  try{
-  const response=await Promise.all(mappings.map(async m=>({m,j:await json('/v1/markets/'+encodeURIComponent(m.slug)+'/bbo')})));
-  if(contract!==active)return;
-  const candidates={UP:[],DOWN:[]};
-  for(const {m,j} of response){
-   const d=j.marketData;
-   if(!d|| (d.marketSlug&&d.marketSlug!==m.slug))throw Error('BBO market slug mismatch');
-   if(d.state&&d.state!=='MARKET_STATE_OPEN')throw Error('Market not open: '+d.state);
-   const ask=quoteValue(d.bestAsk),bid=quoteValue(d.bestBid);
-   if(!Number.isFinite(ask)||!Number.isFinite(bid)||bid>ask)throw Error('Invalid or missing bid/ask for '+m.slug);
-   // Buying YES pays ask. Buying synthetic NO is equivalent to shorting at bid, cost 1-bid.
-   candidates[m.side].push(ask);
-   candidates[m.side==='UP'?'DOWN':'UP'].push(1-bid);
-  }
+  const j=await json('/v1/markets/'+encodeURIComponent(slug)+'/bbo');
+  if(contract!==active||slug!==quoteMarket)return;
+  const d=j.marketData;
+  if(!d||d.marketSlug!==slug)throw Error('BBO market identity mismatch');
+  if(d.state!=='MARKET_STATE_OPEN')throw Error('Market not open: '+String(d.state));
+  const ask=quoteValue(d.bestAsk),bid=quoteValue(d.bestBid);
+  if(!Number.isFinite(ask)||!Number.isFinite(bid)||bid>ask)throw Error('Invalid or missing bid/ask');
+  // US updown: long=UP at bestAsk, short=DOWN at (1-bestBid).
+  const up=ask,down=1-bid;
+  if(!Number.isFinite(down)||down<=0||down>=1)throw Error('Invalid DOWN cost');
   clearQuotes();
-  // When there are multiple directional markets, choose the cheapest accessible route, but show ambiguity if inconsistent.
-  let found=0,eligible=[];
-  for(const side of ['UP','DOWN']){
-   const prices=candidates[side];
-   if(!prices.length)continue;
-   const price=Math.min(...prices);
-   if(!Number.isFinite(price)||price<=0||price>=1)continue;
-   if(displaySide(side,price))eligible.push(side);
-   found++;
-  }
-  if(found!==2)throw Error('Could not derive both directional buy costs');
+  const eligible=[];
+  if(displaySide('UP',up))eligible.push('UP');
+  if(displaySide('DOWN',down))eligible.push('DOWN');
   lastQuoteSuccess=Date.now();
-  $('quotestatus').textContent='US BBO connected • 50% potential-return filter: '+(eligible.length?eligible.join(' / ')+' meets threshold':'neither side meets threshold')+' • NO TRADE';
+  $('quotestatus').textContent='US BBO connected • 50% return filter: '+(eligible.length?eligible.join(' / ')+' meets threshold':'neither side meets threshold')+' • NO TRADE';
   $('quotestatus').className='ok';
   $('quoteage').textContent='Last quote API update: 0s ago';
  }catch(e){
