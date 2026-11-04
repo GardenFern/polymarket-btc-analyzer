@@ -348,7 +348,7 @@ function renderV82(){
  const hits=[20,50,100].map(p=>p+'%: '+v82positions.filter(x=>x['hit'+p]).length).join(' • ');
  $('v82status').textContent=v82positions.length+' forward-only positions • '+hits+' observed threshold crossings • no actual fills or verified order-book depth';
 }
-function csv82(rows,cols,name){const lines=[cols.join(','),...rows.map(r=>cols.map(k=>JSON.stringify(r[k]??'')).join(','))];const blob=new Blob([lines.join('\r\n')],{type:'text/csv;charset=utf-8'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=name;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),3000)}
+function csv82(rows,cols,name){const lines=[cols.join(','),...rows.map(r=>cols.map(k=>csvSafeCell(r[k])).join(','))];const blob=new Blob([lines.join('\r\n')],{type:'text/csv;charset=utf-8'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=name;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),3000)}
 $('v82export').onclick=()=>{const rows=v82positions.map(p=>{const o={...p};for(const n of [20,50,100]){const h=p['hit'+n];o['hit'+n+'Time']=h?.time??'';o['hit'+n+'Pnl']=h?.pnl??'';delete o['hit'+n]}return o});csv82(rows,['slug','marketSlug','entryTime','side','entry','assumedEntryCost','stake','exitCost','outcome','outcomeSource','holdPnl','ticks','depthStatus','fillVerified','hit20Time','hit20Pnl','hit50Time','hit50Pnl','hit100Time','hit100Pnl'],'polymarket-us-v82-exit-research.csv')};
 $('v82tickexport').onclick=()=>csv82(v82ticks,['slug','receivedAt','secondsRemaining','side','bestBid','bestAsk','indicativeSell','exitCost','netSell','indicativePnl','depthVerified','fillVerified'],'polymarket-us-v82-quote-ticks.csv');
 renderV82();setInterval(renderV82,30000);
@@ -367,7 +367,15 @@ const BACKUP_SPECS=[
  ['polymarket-us-v82-quote-ticks','quote-ticks-v82.csv',null]
 ];
 function backupRows(key){const raw=localStorage.getItem(key);if(raw===null)return [];const v=JSON.parse(raw);if(!Array.isArray(v))throw Error('Unexpected non-array data for '+key);return v}
-function backupCsv(rows,cols){if(!cols){cols=[...new Set(rows.flatMap(r=>Object.keys(r||{})))];}const cell=x=>{if(x===undefined||x===null)return '""';if(typeof x==='object')return JSON.stringify(JSON.stringify(x));return JSON.stringify(x)};return [cols.join(','),...rows.map(r=>cols.map(k=>cell(r?.[k])).join(','))].join('\r\n')}
+// RFC 4180 CSV quoting: double interior quotes, including those in nested JSON.
+function csvSafeCell(value){
+ const str=value===undefined||value===null?'':typeof value==='object'?JSON.stringify(value):String(value);
+ return '"'+str.replace(/"/g,'""')+'"';
+}
+function backupCsv(rows,cols){
+ if(!cols)cols=[...new Set(rows.flatMap(r=>Object.keys(r||{})))];
+ return [cols.map(csvSafeCell).join(','),...rows.map(r=>cols.map(k=>csvSafeCell(r?.[k])).join(','))].join('\r\n');
+}
 // ZIP STORE (no compression), assembled locally without third-party libraries or network calls.
 function makeBackupZip(entries){const enc=new TextEncoder(),parts=[],central=[];let offset=0;const u16=n=>[n&255,(n>>>8)&255],u32=n=>[n&255,(n>>>8)&255,(n>>>16)&255,(n>>>24)&255];const crc32=bytes=>{let c=0xffffffff;for(const b of bytes){c^=b;for(let i=0;i<8;i++)c=(c>>>1)^((c&1)?0xedb88320:0)}return (c^0xffffffff)>>>0};for(const [name,content] of entries){const filename=enc.encode(name),data=enc.encode(content),crc=crc32(data),local=new Uint8Array([...u32(0x04034b50),...u16(20),...u16(0),...u16(0),...u16(0),...u16(0),...u32(crc),...u32(data.length),...u32(data.length),...u16(filename.length),...u16(0)]);parts.push(local,filename,data);const cd=new Uint8Array([...u32(0x02014b50),...u16(20),...u16(20),...u16(0),...u16(0),...u16(0),...u16(0),...u32(crc),...u32(data.length),...u32(data.length),...u16(filename.length),...u16(0),...u16(0),...u16(0),...u16(0),...u32(0),...u32(offset)]);central.push(cd,filename);offset+=local.length+filename.length+data.length}const centralSize=central.reduce((n,x)=>n+x.length,0);const end=new Uint8Array([...u32(0x06054b50),...u16(0),...u16(0),...u16(entries.length),...u16(entries.length),...u32(centralSize),...u32(offset),...u16(0)]);return new Blob([...parts,...central,end],{type:'application/zip'})}
 function backupCounts(){try{$('exportallstatus').textContent=BACKUP_SPECS.map(([k,n])=>n.replace('.csv','')+': '+backupRows(k).length).join(' • ')}catch(e){$('exportallstatus').textContent='Backup read error: '+e.message}}
